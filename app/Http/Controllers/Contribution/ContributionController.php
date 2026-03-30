@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Auth;
+use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -589,6 +590,56 @@ class ContributionController extends Controller
                 'error' => true,
                 'message' => $e->getMessage(),
                 'data' => (object)[]
+            ]);
+        }
+    }
+
+    public function destroyMassive(Request $request){
+      
+        try{            
+            $request->validate([
+                'affiliate_id' => 'required|integer',
+                'date_start' => 'required|date',
+                'date_end' => 'required|date|after_or_equal:date_start',
+            ]);   
+
+            $contributions = Contribution::where('affiliate_id', $request->affiliate_id)
+            ->whereBetween('month_year', [$request->date_start, $request->date_end])
+            ->get();
+
+            if($contributions->isEmpty()) {
+                return response()->json([
+                    'error'=> true,
+                    'message' => 'No se eNcontraron registros en el rango '. $request->date_start ." - ". $request->date_end,
+                    'data' => []
+                ]);                
+            }
+            $eliminados = [];
+            foreach ($contributions as $contribution) {       
+                Util::save_record_affiliate($contribution->affiliate, 'eliminado el aporte como activo del periodo '. $contribution->month_year .'.');
+                $contribution->delete();
+                $eliminados[] = $contribution->id;
+            }
+            
+            if(count($eliminados) == 0){
+                return response()->json([
+                    'error'=> true,
+                    'message' => 'No se pudo eliminar ningun registro',
+                    'data' => []
+                ]);                
+            }
+            return response()->json([
+                'error' => false,
+                'message' => 'Registros eliminados exitosamente: ' . count($eliminados),
+                'data' => $contributions
+            ]);
+        }
+
+        catch(\Exception $e){
+            return response()->json([
+                'error' => true,
+                'message' => $e->getMessage(),
+                'data' => []
             ]);
         }
     }

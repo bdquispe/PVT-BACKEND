@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\AffiliatesSimilarExport;
 use App\Exports\AffiliatesSpousesExport;
 use App\Exports\ArchivoPrimarioExport;
 use App\Exports\EcoComMovementsExport;
+use App\Exports\ProceduresFrcamExport;
 use App\Models\Affiliate\Affiliate;
 use App\Models\Contribution\ContributionType;
 use App\Models\RetirementFund\RetirementFund;
@@ -509,4 +511,214 @@ class ReportController extends Controller
             ->get();
         return Excel::download(new EcoComMovementsExport($data), 'eco_com_movements_report.xls');
     }
+
+    public function report_affiliates_similar(Request $request)
+    {        
+        $sql = "
+            SELECT 
+                a1.id AS nup1,
+                a1.identity_card AS ci1,
+                a1.last_name AS last_name1,
+                a1.mothers_last_name AS mothers_last_name1,
+                a1.surname_husband AS surname_husband1,
+                a1.first_name AS first_name1,
+                a1.second_name AS second_name1,
+                EXTRACT(MONTH FROM c1.month_year) AS month1,
+                EXTRACT(YEAR FROM c1.month_year) AS year1,
+                u1.code AS unit_code1,
+                h1.code AS hierarchy_code1,
+                d1.code AS degree_code1,
+                c1.base_wage as base_wage1,
+                c1.seniority_bonus as seniority_bonus1, 
+                c1.study_bonus as study_bonus1,
+                c1.position_bonus as position_bonus1, 
+                c1.border_bonus as border_bonus1,
+                c1.east_bonus as east_bonus1,
+                c1.gain as gain1, 
+                c1.total as total1,
+                c1.contributionable_type as contributionable_type1,
+                a2.id AS nup2,
+                a2.identity_card AS ci2,
+                a2.last_name AS last_name2,
+                a2.mothers_last_name AS mothers_last_name2,
+                a2.surname_husband AS surname_husband2,
+                a2.first_name AS first_name2,
+                a2.second_name AS second_name2,
+                EXTRACT(MONTH FROM c2.month_year) AS month2,
+                EXTRACT(YEAR FROM c2.month_year) AS year2,
+                u2.code AS unit_code2,
+                h2.code AS hierarchy_code2,
+                d2.code AS degree_code2,
+                c2.base_wage as base_wage2,
+                c2.seniority_bonus as seniority_bonus2, 
+                c2.study_bonus as study_bonus2,
+                c2.position_bonus as position_bonus2, 
+                c2.border_bonus as border_bonus2,
+                c2.east_bonus as east_bonus2,
+                c2.gain as gain2, 
+                c2.total as total2,
+                c2.contributionable_type as contributionable_type2
+            FROM affiliates a1
+            JOIN contributions c1 ON c1.affiliate_id = a1.id
+            LEFT JOIN units u1 ON u1.id = a1.unit_id
+            LEFT JOIN degrees d1 ON d1.id = a1.degree_id
+            LEFT JOIN hierarchies h1 ON h1.id = d1.hierarchy_id
+            JOIN affiliates a2 ON a1.id < a2.id
+            JOIN contributions c2 ON c2.affiliate_id = a2.id
+                AND c1.month_year = c2.month_year
+            LEFT JOIN units u2 ON u2.id = a2.unit_id
+            LEFT JOIN degrees d2 ON d2.id = a2.degree_id
+            LEFT JOIN hierarchies h2 ON h2.id = d2.hierarchy_id
+            WHERE 
+                (
+                    similarity(a1.identity_card, a2.identity_card) > 0.5
+                    AND similarity(a1.first_name, a2.first_name) > 0.5
+                    AND similarity(a1.last_name, a2.last_name) > 0.5
+                    AND similarity(a1.mothers_last_name, a2.mothers_last_name) > 0.5
+                    AND (
+                        similarity(a1.second_name, a2.second_name) > 0.7
+                        OR LEFT(a1.second_name, 1) = LEFT(a2.second_name, 1)
+                    )
+                )
+            ORDER BY ci1 desc";
+
+        $list = DB::select($sql);
+        return Excel::download(new AffiliatesSimilarExport($list), 'affiliates_similar.xls');
+    }
+        /**
+     * @OA\Post(
+     *      path="/api/report/report_procedures_frcam",
+     *      tags={"REPORTES"},
+     *      summary="GENERA REPORTE DE TRAMITES DE FONDO DE RETIRO, CUOTA Y AUXILIO MORTUORIO",
+     *      operationId="report_procedures_frcam",
+     *      description="Genera reporte de los trámites de fondo de retiro, cuota y auxilio mortuorio",
+     *      @OA\RequestBody(
+     *          description= "Reporte de trámites de fondo de retiro, cuota y auxilio mortuorio",
+     *          required=true,
+     *          @OA\JsonContent(
+     *              type="object",
+     *              @OA\Property(property="start_date", type="date",description="Fecha inicio del reporte", example="2026-02-01"),
+     *              @OA\Property(property="end_date", type="date",description="Fecha final del reporte", example="2026-02-28")
+     *         ),
+     *     ),
+     *     security={
+     *         {"bearerAuth": {}}
+     *     },
+     *      @OA\Response(
+     *          response=200,
+     *          description="Success",
+     *          @OA\JsonContent(
+     *            type="object"
+     *         )
+     *      )
+     * )
+     *
+     * @param Request $request
+     * @return void
+     */
+
+    public function report_procedures_frcam(Request $request)
+    {        
+        $date = date('Y-m-d');
+        
+        if ($request->start_date == NULL || $request->end_date == NULL) {
+            $start_date = $date;
+            $end_date = $date;
+        } else {
+            $start_date = Carbon::parse($request->start_date)->toDateString(); // Devuelve 'YYYY-MM-DD'
+            $end_date = Carbon::parse($request->end_date)->toDateString();
+        }
+
+        $sql = "
+            WITH last_adress AS (
+                SELECT DISTINCT ON (ad.addressable_id)
+                    ad.addressable_id AS affiliate_id,
+                    c.name AS city,
+                    ad2.zone,
+                    ad2.street,
+                    ad2.housing_unit,
+                    ad2.number_address,
+                    ad2.description
+                FROM addressables ad
+                JOIN addresses ad2 
+                    ON ad.address_id = ad2.id
+                LEFT JOIN cities c 
+                    ON c.id = ad2.city_address_id
+                WHERE ad.addressable_type ILIKE '%affiliates%'
+                ORDER BY ad.addressable_id, ad2.updated_at DESC
+            ),
+
+            procedures AS (
+                SELECT 
+                    rf.code,
+                    rf.procedure_modality_id,
+                    rf.reception_date,
+                    rf.city_start_id,
+                    rf.affiliate_id
+                FROM retirement_funds rf
+                WHERE rf.code NOT ILIKE '%a%'
+                AND rf.deleted_at IS NULL
+                AND rf.reception_date BETWEEN :start_date AND :end_date
+
+                UNION ALL
+
+                SELECT 
+                    qam.code,
+                    qam.procedure_modality_id,
+                    qam.reception_date,
+                    qam.city_start_id,
+                    qam.affiliate_id
+                FROM quota_aid_mortuaries qam
+                WHERE qam.code NOT ILIKE '%a%'
+                AND qam.deleted_at IS NULL
+                AND qam.reception_date BETWEEN :start_date AND :end_date
+            )
+
+            SELECT
+                pro.code,
+                pt.name AS pt_name,
+                pm.name as pm_name,
+                pm.shortened AS pm_shortened,
+                pro.reception_date,
+                c.name AS city_start,
+                a.id AS nup,
+                a.first_name,
+                a.second_name,
+                a.last_name,
+                a.mothers_last_name,
+                a.identity_card,
+                a.date_entry,
+                a.date_derelict,
+                d.shortened AS degree_shortened,
+                a.birth_date,
+                a.date_death,
+                a.civil_status,
+                a.gender,
+                la.city as city_address,
+                la.zone,
+                la.street,
+                la.housing_unit,
+                la.number_address,
+                la.description
+            FROM procedures pro
+            JOIN affiliates a 
+                ON a.id = pro.affiliate_id
+            JOIN procedure_modalities pm 
+                ON pm.id = pro.procedure_modality_id
+            JOIN procedure_types pt 
+                ON pm.procedure_type_id = pt.id
+            JOIN cities c 
+                ON pro.city_start_id = c.id
+            JOIN degrees d 
+                ON d.id = a.degree_id
+            LEFT JOIN last_adress la
+                ON la.affiliate_id = pro.affiliate_id
+            ORDER BY nup, pm_shortened";
+        
+        $list = DB::select($sql, [
+            'start_date' => $start_date,
+            'end_date'   => $end_date
+        ]);
+        return Excel::download(new ProceduresFrcamExport($list), 'procedures_frcam_report.xls');
+     }
 }

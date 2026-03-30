@@ -114,6 +114,43 @@ class LoanController extends Controller
             return "Prestamo no desembolsado";
         }
     }
+
+    public function print_plan_v2(Request $request, Loan $loan)
+    {
+        if($loan->disbursement_date){
+            $procedure_modality = $loan->modality;
+            $file_title = implode('_', ['PLAN','DE','PAGOS', $procedure_modality->shortened, $loan->code,Carbon::now()->format('m/d')]);
+            $is_dead = false;
+            if($loan->borrower->first()->type == 'spouses')
+                $is_dead = true;
+            $data = [
+                'header' => [
+                    'direction' => 'DIRECCIÓN DE ESTRATEGIAS SOCIALES E INVERSIONES',
+                    'unity' => 'UNIDAD DE INVERSIÓN EN PRÉSTAMOS',
+                    'table' => [
+                        ['Tipo', $loan->modality->procedure_type->second_name],
+                        ['Modalidad', $loan->modality->shortened],
+                        ['Fecha', Carbon::now()->format('d/m/Y')],
+                        ['Hora', Carbon::now()->format('H:i')],
+                    ]
+                ],
+                'title' => 'PLAN DE PAGOS',
+                'loan' => $loan,
+                'lender' => $is_dead ? $loan->affiliate->spouse : $loan->affiliate,
+                'is_dead'=> $is_dead,
+                'file_title'=>$file_title
+            ];
+            $file_name = implode('_', ['plan', $procedure_modality->shortened, $loan->code]) . '.pdf';
+            $pdf = PDF::loadView('loan/payment_plan', $data);
+
+            return [
+                'filename' => $file_name,
+                'content' => base64_encode($pdf->output()),
+            ];
+        }else{
+            return "Prestamo no desembolsado";
+        }
+    }
     public function print_kardex(Request $request, Loan $loan, $standalone = true)
     {
         if($loan->disbursement_date){
@@ -142,6 +179,42 @@ class LoanController extends Controller
                 ];
                 $pdf=PDF::loadView('loan.payment_kardex', $data);
                 return $pdf->setPaper('a4', 'portrait')->stream();
+            }else{
+                return "prestamo no desembolsado";
+            }
+    }
+
+    public function print_kardex_v2(Request $request, Loan $loan, $standalone = true)
+    {
+        if($loan->disbursement_date){
+            $procedure_modality = $loan->modality;
+            $is_dead = false;
+            if($loan->borrower->first()->type == 'spouses'){
+                $is_dead = true;
+            }
+                $file_title = $procedure_modality->shortened;
+                $data = [
+                    'header' => [
+                        'direction' => 'DIRECCIÓN DE ESTRATEGIAS SOCIALES E INVERSIONES',
+                        'unity' => 'UNIDAD DE INVERSIÓN EN PRÉSTAMOS',
+                        'table' => [
+                            ['Tipo', $loan->modality->procedure_type->second_name],
+                            ['Modalidad', $loan->modality->shortened],
+                            ['Fecha', Carbon::now()->format('d/m/Y')],
+                            ['Hora', Carbon::now()->format('H:i')],
+                        ]
+                    ],
+                    'title' => 'KARDEX DE PAGOS',
+                    'loan' => $loan,
+                    'lender' => $is_dead ? $loan->affiliate->spouse : $loan->affiliate,
+                    'file_title' => $file_title,
+                    'is_dead' => $is_dead
+                ];
+                $pdf=PDF::loadView('loan.payment_kardex', $data);
+                return [
+                    'filename' => 'KARDEX DE PAGOS.pdf',
+                    'content' => base64_encode($pdf->output()),
+                ];
             }else{
                 return "prestamo no desembolsado";
             }
@@ -380,7 +453,8 @@ class LoanController extends Controller
     }
 
 
-    /**
+    /**        return $pdf->download('aportes_act_' . $affiliate_id . '.pdf');
+
      * Remove the specified resource from storage.
      *
      * @param  int  $id

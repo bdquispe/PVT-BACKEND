@@ -17,11 +17,21 @@ Route::group([
     Route::group([
         'middleware' => ['api_auth']
     ], function () {
+        //LOAN
         Route::get('/get_information_loan/{id_affiliate}',[App\Http\Controllers\Loan\LoanController::class, 'get_information_loan']);
         Route::get('/loan/{loan}/print/plan',[App\Http\Controllers\Loan\LoanController::class, 'print_plan']);
+        Route::get('loan/{loan}/print/kardex',[App\Http\Controllers\Loan\LoanController::class, 'print_kardex']);
+        //CONTRIBUTION
         Route::get('/all_contributions/{affiliate_id}', [App\Http\Controllers\Contribution\AppContributionController::class, 'all_contributions']);
         Route::get('/contributions_passive/{affiliate_id}', [App\Http\Controllers\Contribution\AppContributionController::class, 'printCertificationContributionPassive']);
         Route::get('/contributions_active/{affiliate_id}', [App\Http\Controllers\Contribution\AppContributionController::class, 'printCertificationContributionActive']);
-        Route::get('loan/{loan}/print/kardex',[App\Http\Controllers\Loan\LoanController::class, 'print_kardex']);
+
+        //LOAN V2
+        Route::get('/loan/{loan}/print/plan_v2',[App\Http\Controllers\Loan\LoanController::class, 'print_plan_v2']);
+        Route::get('loan/{loan}/print/kardex_v2',[App\Http\Controllers\Loan\LoanController::class, 'print_kardex_v2']);
+        //CONTRIBUTION V2
+        Route::get('/contributions_passive_v2/{affiliate_id}', [App\Http\Controllers\Contribution\AppContributionController::class, 'printCertificationContributionPassive_v2']);
+        Route::get('/contributions_active_v2/{affiliate_id}', [App\Http\Controllers\Contribution\AppContributionController::class, 'printCertificationContributionActive_v2']);
+
     });
 });

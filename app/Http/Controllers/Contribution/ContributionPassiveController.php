@@ -262,13 +262,13 @@ class ContributionPassiveController extends Controller
             $month = ltrim(Carbon::parse($contributions_passive->month_year)->format('m'), "0");
             if ($contributions_passive->contributionable_type == "discount_type_economic_complement") {
                 $contributions_passive->contributionable_type_name = "Complemento Economico";
+            } else if ($contributions_passive->contributionable_type == "payroll_senasirs") {
+                $contributions_passive->contributionable_type_name = "Senasir";
+            } else if ($contributions_passive->contributionable_type == "payroll_filemakers") {
+                $contributions_passive->contributionable_type_name = "Filemaker";
             } else {
-                if ($contributions_passive->contributionable_type == "payroll_senasirs") {
-                    $contributions_passive->contributionable_type_name = "Senasir";
-                } else {
                     $contributions_passive->contributionable_type_name = "";
-                }
-            }
+            }            
             $contributions_passive->year = $year;
             $contributions_passive->month = $month;
             $contributions_passive->contribution_state;
@@ -492,6 +492,56 @@ class ContributionPassiveController extends Controller
                 'error' => true,
                 'message' => $e->getMessage(),
                 'data' => (object)[]
+            ]);
+        }
+    }
+
+    public function destroyMassive(Request $request){
+      
+        try{            
+            $request->validate([
+                'affiliate_id' => 'required|integer',
+                'date_start' => 'required|date',
+                'date_end' => 'required|date|after_or_equal:date_start',
+            ]);   
+
+            $contributions = ContributionPassive::where('affiliate_id', $request->affiliate_id)
+            ->whereBetween('month_year', [$request->date_start, $request->date_end])->where('contributionable_type', '!=', 'discount_type_economic_complement')
+            ->get();
+
+            if($contributions->isEmpty()) {
+                return response()->json([
+                    'error'=> true,
+                    'message' => 'No se encontraron registros en el rango '. $request->date_start ." - ". $request->date_end. " o correponden a descuento por Complemento Económico",
+                    'data' => []
+                ]);                
+            }
+            $eliminados = [];
+            foreach ($contributions as $contribution) {       
+                Util::save_record_affiliate($contribution->affiliate, 'eliminado el aporte como pasivo del periodo '. $contribution->month_year .'.');
+                $contribution->delete();
+                $eliminados[] = $contribution->id;
+            }
+            
+            if(count($eliminados) == 0){
+                return response()->json([
+                    'error'=> true,
+                    'message' => 'No se pudo eliminar ningun registro',
+                    'data' => []
+                ]);                
+            }
+            return response()->json([
+                'error' => false,
+                'message' => 'Registros eliminados exitosamente: ' . count($eliminados),
+                'data' => $contributions
+            ]);
+        }
+
+        catch(\Exception $e){
+            return response()->json([
+                'error' => true,
+                'message' => $e->getMessage(),
+                'data' => []
             ]);
         }
     }

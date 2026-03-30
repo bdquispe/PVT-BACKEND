@@ -104,6 +104,14 @@ class ContributionPermissionSeedeer extends Seeder
                 'action_id' => Action::where('name', 'create')->first()->id,
                 'name' => 'create-import-mora',
                 'display_name' => 'Crear importación de afiliados en Mora'
+            ],[
+                'action_id'=>Action::where('name','delete')->first()->id,
+                'name' => 'delete-massive-contribution-passive',
+                'display_name' => 'Eliminación masiva aportes sector pasivo'
+            ],[
+                'action_id'=>Action::where('name','delete')->first()->id,
+                'name' => 'delete-massive-contribution',
+                'display_name' => 'Eliminación masiva aportes sector activo'
             ]
         ];
         foreach ($permissions as $permission) {

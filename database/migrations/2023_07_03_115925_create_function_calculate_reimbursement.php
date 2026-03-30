@@ -68,6 +68,7 @@ return new class extends Migration
 										affiliate_id = p_affiliate_id
 										and month_year <= p_date_period
 										and extract(year from month_year)= extract(year from p_date_period)
+                                        and deleted_at is null
 									group by
 										affiliate_id;
                     return round(retirement_fund_calculator_into,2);

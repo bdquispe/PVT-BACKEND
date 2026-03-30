@@ -20,9 +20,19 @@ Route::group([
         Route::get('/search_active_affiliate_contribution', [App\Http\Controllers\Contribution\ContributionController::class, 'SearchContributionActive']);
         Route::apiResource('/contribution_state', App\Http\Controllers\Contribution\ContributionStateController::class)->only(['index']);
         Route::group([
+            'middleware' => 'permission:delete-massive-contribution-passive'
+        ], function () {
+            Route::delete('/contributions_passive/massive', [App\Http\Controllers\Contribution\ContributionPassiveController::class, 'destroyMassive']);
+        });
+        Route::group([
             'middleware' => 'permission:delete-contribution-passive'
         ], function () {
             Route::delete('/contributions_passive/{contributionPassive}', [App\Http\Controllers\Contribution\ContributionPassiveController::class, 'destroy']);
+        });
+        Route::group([
+            'middleware' => 'permission:delete-massive-contribution'
+        ], function () {
+            Route::delete('/contribution/massive', [App\Http\Controllers\Contribution\ContributionController::class, 'destroyMassive']);
         });
         Route::group([
             'middleware' => 'permission:delete-contribution'

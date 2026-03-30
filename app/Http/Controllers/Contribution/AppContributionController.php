@@ -247,6 +247,102 @@ class AppContributionController extends Controller
         return $pdf->download('aportes_pas_' . $affiliate_id . '.pdf');
     }
 
+    public function printCertificationContributionPassive_v2(Request $request, $affiliate_id)
+    {
+        $request['affiliate_id'] = $affiliate_id;
+        $request->validate([
+            'affiliate_id' => 'required|integer|exists:contribution_passives,affiliate_id',
+        ]);
+
+        $affiliate = Affiliate::find($affiliate_id);
+        $user = User::find(171);
+        $degree = Degree::find($affiliate->degree_id);
+        $contributions = collect();
+        $value = false;
+        $text = '';
+
+        if ($affiliate->dead && $affiliate->spouse != null) {
+            $contributions_passives = ContributionPassive::whereAffiliateId($affiliate_id)
+                ->where('affiliate_rent_class', 'ilike', '%VIUDEDAD%')
+                ->where('contribution_state_id', 2)
+                ->orderBy('month_year', 'asc')
+                ->get();
+            $value = true;
+        } else {
+            $contributions_passives = ContributionPassive::whereAffiliateId($affiliate_id)
+                ->where('contribution_state_id', 2)
+                ->orderBy('month_year', 'asc')
+                ->get();
+        }
+
+        foreach ($contributions_passives as $contributions_passive) {
+            $year = Carbon::parse($contributions_passive->month_year)->format('Y');
+            $month = Carbon::parse($contributions_passive->month_year)->format('m');
+            if ($contributions_passive->affiliate_rent_class == 'VEJEZ') {
+                $rent_class = 'Titular';
+            } elseif ($contributions_passive->affiliate_rent_class == 'VIUDEDAD') {
+                $rent_class = 'Viuda';
+            } else {
+                $rent_class = 'Titular/Viuda';
+            }
+            if ($contributions_passive->contributionable_type == 'discount_type_economic_complement') {
+                $modality = $contributions_passive->contributionable->economic_complement->eco_com_procedure;
+                $modality_year = Carbon::parse($modality->year)->format('Y');
+                $text = "C.E." . $modality->semester . " Semestre " . $modality_year;
+            } else {
+                $text = $contributions_passive->contributionable_type == 'payroll_senasirs' ? 'Descuento SENASIR' : 'Descuento No Especificado';
+            }
+            $contributions->push([
+                'id' => $contributions_passive->id,
+                'month_year' => $contributions_passive->month_year,
+                'month' => $month,
+                'year' => $year,
+                'rent_class' => $rent_class,
+                'description' => $text,
+                'quotable' => $contributions_passive->quotable,
+                'retirement_fund' => null,
+                'mortuary_quota' => null,
+                'total' => $contributions_passive->total,
+                'type' => $contributions_passive->contributionable_type
+            ]);
+        }
+        $num = 0;
+        $data = [
+            'header' => [
+                'direction' => 'DIRECCIÓN DE BENEFICIOS ECONÓMICOS',
+                'unity' => 'UNIDAD DE OTORGACIÓN DE FONDO DE RETIRO
+                            POLICIAL, CUOTA MORTUORIA Y AUXILIO MORTUORIO',
+                'table' => [
+                    ['Usuario', $user->username],
+                    ['Fecha', Carbon::now()->format('d/m/Y')],
+                    ['Hora', Carbon::now()->format('H:i')],
+                ]
+            ],
+            'num' => $num,
+            'degree' => $degree,
+            'affiliate' => $affiliate,
+            'user' => $user,
+            'value' => $value,
+            'text' => $text,
+            'contributions' => $contributions
+        ];
+        $pdf = PDF::loadView('contribution.print.app_certification_contribution_eco_com', $data);
+        $pdf->output();
+        $dom_pdf = $pdf->getDomPDF();
+        $canvas = $dom_pdf->get_canvas();
+
+        $width = $canvas->get_width();
+        $height = $canvas->get_height();
+        $pageNumberWidth = $width / 2;
+        $pageNumberHeight = $height - 35;
+        $canvas->page_text($pageNumberWidth, $pageNumberHeight, "Página {PAGE_NUM} de {PAGE_COUNT}", null, 10, array(0, 0, 0));
+
+        return [
+            'filename' => 'certificacion_contribution_eco_com_' . $affiliate_id . '.pdf',
+            'content' => base64_encode($pdf->output()),
+        ];
+    }
+
     public function printCertificationContributionActive(Request $request, $affiliate_id)
     {
         $request['affiliate_id'] = $affiliate_id;
@@ -295,6 +391,59 @@ class AppContributionController extends Controller
         $canvas->page_text($pageNumberWidth, $pageNumberHeight, "Página {PAGE_NUM} de {PAGE_COUNT}", null, 10, array(0, 0, 0));
 
         return $pdf->download('aportes_act_' . $affiliate_id . '.pdf');
+    }
+
+    public function printCertificationContributionActive_v2(Request $request, $affiliate_id)
+    {
+        $request['affiliate_id'] = $affiliate_id;
+        $request->validate([
+            'affiliate_id' => 'required|integer|exists:contributions,affiliate_id',
+        ]);
+
+        $affiliate = Affiliate::find($affiliate_id);
+        $user = User::find(171);
+        $degree = Degree::find($affiliate->degree_id);
+        $contributions = Contribution::whereAffiliateId($affiliate_id)
+            ->where('total', '>', 0)
+            ->orderBy('month_year', 'asc')
+            ->get();
+        $reimbursements = Reimbursement::whereAffiliateId($affiliate_id)
+            ->orderBy('month_year', 'asc')
+            ->get();
+        $num = 0;
+        $data = [
+            'header' => [
+                'direction' => 'DIRECCIÓN DE BENEFICIOS ECONÓMICOS',
+                'unity' => 'UNIDAD DE OTORGACIÓN DE FONDO DE RETIRO
+                            POLICIAL, CUOTA MORTUORIA Y AUXILIO MORTUORIO',
+                'table' => [
+                    ['Usuario', $user->username],
+                    ['Fecha', Carbon::now()->format('d/m/Y')],
+                    ['Hora', Carbon::now('GMT-4')->format('H:i')],
+                ]
+            ],
+            'num' => $num,
+            'degree' => $degree,
+            'affiliate' => $affiliate,
+            'contributions' => $contributions,
+            'reimbursements' => $reimbursements
+        ];
+
+        $pdf = PDF::loadView('contribution.print.app_certification_contribution_active', $data);
+        $pdf->output();
+        $dom_pdf = $pdf->getDomPDF();
+        $canvas = $dom_pdf->get_canvas();
+
+        $width = $canvas->get_width();
+        $height = $canvas->get_height();
+        $pageNumberWidth = $width / 2;
+        $pageNumberHeight = $height - 35;
+        $canvas->page_text($pageNumberWidth, $pageNumberHeight, "Página {PAGE_NUM} de {PAGE_COUNT}", null, 10, array(0, 0, 0));
+
+        return [
+            'filename' => 'certificacion_contribution_active_' . $affiliate_id . '.pdf',
+            'content' => base64_encode($pdf->output()),
+        ];
     }
 
     /**

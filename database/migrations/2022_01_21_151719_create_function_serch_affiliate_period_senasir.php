@@ -22,7 +22,7 @@ class CreateFunctionSerchAffiliatePeriodSenasir extends Migration
            --************************************************************************************
            --Funcion par buscar id de la contribucion de un afiliado de un periodo determinado
            --************************************************************************************ 
-            SELECT cp.id INTO id_contribution_passive  FROM contribution_passives cp WHERE cp.affiliate_id = affiliate AND cp.month_year = year_copy;
+            SELECT cp.id INTO id_contribution_passive  FROM contribution_passives cp WHERE cp.affiliate_id = affiliate AND cp.month_year = year_copy AND cp.deleted_at IS NULL;
                 IF id_contribution_passive is NULL THEN
                     return 0;
                 ELSE

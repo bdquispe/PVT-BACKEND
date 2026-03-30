@@ -58,6 +58,7 @@ return new class extends Migration
                 c2.month_year - 
                 (ROW_NUMBER() OVER (PARTITION BY c2.affiliate_id, c2.contribution_type_id ORDER BY c2.month_year)) * INTERVAL '1 month' AS grp
             FROM contributions c2
+            WHERE deleted_at is null
         ),
         ---Agrupar periodos por contribution_type_id 
         grouped_periods AS (
@@ -101,6 +102,7 @@ return new class extends Migration
                     month_year,
                     unit_id
                 FROM contributions
+                WHERE deleted_at is null
                 ORDER BY affiliate_id, month_year
             ) AS c ON c.affiliate_id = a.id
             LEFT JOIN (

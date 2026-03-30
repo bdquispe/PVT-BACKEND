@@ -19,5 +19,7 @@ Route::group([
         Route::get('report_affiliates_spouses', [App\Http\Controllers\ReportController::class, 'report_affiliates_spouses']);
         Route::post('report_retirement_funds', [App\Http\Controllers\ReportController::class, 'report_retirement_funds']);
         Route::post('report_payments_beneficiaries', [App\Http\Controllers\ReportController::class, 'report_payments_beneficiaries']);
+        Route::get('report_affiliates_similar', [App\Http\Controllers\ReportController::class, 'report_affiliates_similar']);
+        Route::post('report_procedures_frcam', [App\Http\Controllers\ReportController::class, 'report_procedures_frcam']);
     });
 });

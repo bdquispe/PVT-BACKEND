@@ -104,7 +104,7 @@ class CreateFunctionTmpContributionEcoCom extends Migration
         array_length_months := array_length(_periods, 1);
         --Realiza recorrido de los 6 meses
         for i in 1.. array_length_months loop
-         select * from contribution_passives cp where cp.affiliate_id = record_row.affiliate_id and cp.month_year = _periods[i]::date into contribution_passive;
+         select * from contribution_passives cp where cp.deleted_at is null and cp.affiliate_id = record_row.affiliate_id and cp.month_year = _periods[i]::date into contribution_passive;
 
         contribution_id := (
         select
@@ -112,7 +112,8 @@ class CreateFunctionTmpContributionEcoCom extends Migration
         from
             contribution_passives cp
         where
-            cp.affiliate_id = record_row.affiliate_id
+            cp.deleted_at is null
+            and cp.affiliate_id = record_row.affiliate_id
             and cp.month_year = _periods[i]::date);
 
         if not exists(
@@ -121,7 +122,8 @@ class CreateFunctionTmpContributionEcoCom extends Migration
         from
             contribution_passives cp
         where
-            cp.affiliate_id = record_row.affiliate_id
+            cp.deleted_at is null
+            and cp.affiliate_id = record_row.affiliate_id
             and cp.month_year = _periods[i]::date) then
         --Creación de Nuevos aportes--
         insert
@@ -155,7 +157,7 @@ class CreateFunctionTmpContributionEcoCom extends Migration
         current_timestamp,
         current_timestamp);
        end if;
-       if ((select count(cp.id) from contribution_passives cp where cp.affiliate_id = record_row.affiliate_id and cp.month_year = _periods[i]::date and cp.contributionable_type = 'discount_type_economic_complement' and cp.contributionable_id = record_row.id_discont_type)>=1) then
+       if ((select count(cp.id) from contribution_passives cp where cp.deleted_at is null and cp.affiliate_id = record_row.affiliate_id and cp.month_year = _periods[i]::date and cp.contributionable_type = 'discount_type_economic_complement' and cp.contributionable_id = record_row.id_discont_type)>=1) then
                    --Actualización de aportes--
                              if(contribution_passive.total <> amount_month)then
                                update public.contribution_passives
@@ -238,7 +240,7 @@ class CreateFunctionTmpContributionEcoCom extends Migration
         where dtec.discount_type_id = 7
         and ecs.eco_com_state_type_id = 1
         and ec.deleted_at is null);
-        amount_contribution_passive:= (select sum(cp.total) from contribution_passives cp where contribution_state_id = 2::bigint and cp.contributionable_type='discount_type_economic_complement');
+        amount_contribution_passive:= (select sum(cp.total) from contribution_passives cp where cp.deleted_at is null and contribution_state_id = 2::bigint and cp.contributionable_type='discount_type_economic_complement');
         message := 'Registro realizado exitosamente'||','|| amount_economic_complement||','||amount_contribution_passive;
 
         return message;

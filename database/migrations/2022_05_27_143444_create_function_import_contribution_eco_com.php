@@ -93,7 +93,8 @@ return new class extends Migration
     	dtec.discount_type_id = 7 --Descuento para Aporte Auxilio Mortuorio
     	and ecs.eco_com_state_type_id = 1 --Estado Pagado del Tramite de Complemento Economico
     	and contribution_state_id = 1 --Estado En proceso
-    	and ec.id = id_economic_complements);
+    	and ec.id = id_economic_complements
+        and cp.deleted_at is null);
 
    begin
     --************************************************************************************************--
@@ -109,8 +110,8 @@ return new class extends Migration
        contribution_state_id = 2::bigint,
        updated_at = current_timestamp
    where
-       contribution_passives.id = record_row.contribution_id;
-   count_reg:= count_reg + 1;
+       contribution_passives.id = record_row.contribution_id and contribution_passives.deleted_at is null;
+       count_reg:= count_reg + 1;
    end loop;
    message:=concat('Los aporte validados son: ',count_reg);
    return message ;
@@ -143,7 +144,8 @@ return new class extends Migration
         dtec.discount_type_id = 7
         and ec.eco_com_state_id in (16)
         and contribution_state_id = 2--Pagado
-        and ec.id = id_economic_complements);
+        and ec.id = id_economic_complements
+        and cp.deleted_at is null);
 
     begin
         --******************************************************************************--
@@ -236,7 +238,7 @@ AS $$
           array_length_months := array_length(periods, 1);-- numero de meses
 
                 for i in 1.. array_length_months loop      						  -- verificar si existe un periodo registrado
-                  if ((select count(cp.id) from contribution_passives cp where cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date and cp.contributionable_type <> 'discount_type_economic_complement')>=1)then
+                  if ((select count(cp.id) from contribution_passives cp where cp.deleted_at is null and cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date and cp.contributionable_type <> 'discount_type_economic_complement')>=1)then
                           is_validate = true;
                           not_valid_period = periods[i]::date;
                  end if;
@@ -246,9 +248,9 @@ AS $$
               if(is_validate is false)then
                 tramit_number = 1;
               for i in 1.. array_length_months loop
-                 select * from contribution_passives cp where cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date into contribution_passive;
+                 select * from contribution_passives cp where cp.deleted_at is null and cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date into contribution_passive;
                   --No existe el registro de complemento economico
-                  if not exists(select cp.id from contribution_passives cp where cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date and cp.contributionable_type = 'discount_type_economic_complement' and cp.contributionable_id = record_row.id_discont_type) then
+                  if not exists(select cp.id from contribution_passives cp where cp.deleted_at is null and cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date and cp.contributionable_type = 'discount_type_economic_complement' and cp.contributionable_id = record_row.id_discont_type) then
                   --Creación de Nuevos aportes--
                       insert into
                          public.contribution_passives (user_id,
@@ -291,7 +293,7 @@ AS $$
                           contribution_created = contribution_created + 1;
                   --Fin de Creación de Nuevos aportes--
                   else
-                     if ((select count(cp.id) from contribution_passives cp where cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date and cp.contributionable_type = 'discount_type_economic_complement' and cp.contributionable_id = record_row.id_discont_type)>=1) then
+                     if ((select count(cp.id) from contribution_passives cp where cp.deleted_at is null and cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date and cp.contributionable_type = 'discount_type_economic_complement' and cp.contributionable_id = record_row.id_discont_type)>=1) then
                   --Actualización de aportes--
                             if(contribution_passive.total <> amount_month)then
                               update public.contribution_passives

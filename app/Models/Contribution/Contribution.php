@@ -11,9 +11,14 @@ use App\Models\Affiliate\Category;
 use App\Models\Affiliate\Degree;
 use App\Models\Affiliate\Unit;
 use App\Models\Contribution\ContributionRate;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 class Contribution extends Model
 {
     use HasFactory;
+    use SoftDeletes;
+    
+    protected $dates = ['deleted_at'];
     public $timestamps = true;
     public $guarded = ['id'];
     protected $fillable = [
@@ -102,7 +107,7 @@ class Contribution extends Model
         return ContributionRate::whereMonth_year($month_year)->get()->first()? true:false;
     }
     public function can_deleted(){
-        return is_null($this->contributionable_type)? true : false;
+        return is_null($this->contribution_type_id) && is_null($this->contribution_type_mortuary_id) ? true : false;        
     }
 
 }

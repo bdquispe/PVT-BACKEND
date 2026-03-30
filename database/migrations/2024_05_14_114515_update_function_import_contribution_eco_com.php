@@ -79,7 +79,7 @@ return new class extends Migration {
             array_length_months := array_length(periods, 1);-- numero de meses
 
                     for i in 1.. array_length_months loop      						  -- verificar si existe un periodo registrado
-                    if ((select count(cp.id) from contribution_passives cp where cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date and cp.contributionable_type <> 'discount_type_economic_complement')>=1)then
+                    if ((select count(cp.id) from contribution_passives cp where cp.deleted_at is null and cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date and cp.contributionable_type <> 'discount_type_economic_complement')>=1)then
                             is_validate = true;
                             not_valid_period = periods[i]::date;
                     end if;
@@ -89,9 +89,9 @@ return new class extends Migration {
                 if(is_validate is false)then
                     tramit_number = 1;
                 for i in 1.. array_length_months loop
-                    select * from contribution_passives cp where cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date into contribution_passive;
+                    select * from contribution_passives cp where cp.deleted_at is null and cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date into contribution_passive;
                     --No existe el registro de complemento economico
-                    if not exists(select cp.id from contribution_passives cp where cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date and cp.contributionable_type = 'discount_type_economic_complement' and cp.contributionable_id = record_row.id_discont_type) then
+                    if not exists(select cp.id from contribution_passives cp where cp.deleted_at is null and cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date and cp.contributionable_type = 'discount_type_economic_complement' and cp.contributionable_id = record_row.id_discont_type) then
                     --Creación de Nuevos aportes--
                         insert into
                             public.contribution_passives (user_id,
@@ -134,7 +134,7 @@ return new class extends Migration {
                             contribution_created = contribution_created + 1;
                     --Fin de Creación de Nuevos aportes--
                     else
-                        if ((select count(cp.id) from contribution_passives cp where cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date and cp.contributionable_type = 'discount_type_economic_complement' and cp.contributionable_id = record_row.id_discont_type)>=1) then
+                        if ((select count(cp.id) from contribution_passives cp where cp.deleted_at is null and cp.affiliate_id = record_row.affiliate_id and cp.month_year = periods[i]::date and cp.contributionable_type = 'discount_type_economic_complement' and cp.contributionable_id = record_row.id_discont_type)>=1) then
                     --Actualización de aportes--
                                 if(contribution_passive.total <> amount_month)then
                                 update public.contribution_passives

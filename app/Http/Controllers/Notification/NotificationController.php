@@ -310,7 +310,7 @@ class NotificationController extends Controller
                 ->acceptJson()
                 ->post(env('URL_BACKEND_NODE'),[
                     'tokens' => $tokens,
-                    'title'  => 'COMPLEMENTO ECONÓMICO',
+                    'title'  => 'MUSERPOL',
                     'body'   => 'COMUNICADO',
                     'image'  => env('NOTIFICATION_IMAGE', ''),
                     'data'   => $data
