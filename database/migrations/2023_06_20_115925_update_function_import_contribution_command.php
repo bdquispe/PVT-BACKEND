@@ -46,7 +46,7 @@ return new class extends Migration
                                  study_bonus,position_bonus,border_bonus,east_bonus,
                                  gain,payable_liquid,quotable,
                                  retirement_fund,mortuary_quota,total,
-                                 created_at,updated_at,contributionable_type,contributionable_id)
+                                 created_at,updated_at,contributionable_type,contributionable_id, days_worked)
                                    VALUES (
                                    user_id_into,
                                    record_row.affiliate_id,
@@ -71,7 +71,8 @@ return new class extends Migration
                                    current_timestamp,
                                    current_timestamp,
                                    'payroll_commands',
-                                   record_row.id);
+                                   record_row.id, record_row.days_worked
+                                   );
                                    num_import:=num_import+1;
                                   --end if;
                               END LOOP;
