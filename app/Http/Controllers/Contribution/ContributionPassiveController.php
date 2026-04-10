@@ -506,13 +506,13 @@ class ContributionPassiveController extends Controller
             ]);   
 
             $contributions = ContributionPassive::where('affiliate_id', $request->affiliate_id)
-            ->whereBetween('month_year', [$request->date_start, $request->date_end])->where('contributionable_type', '!=', 'discount_type_economic_complement')
+            ->whereBetween('month_year', [$request->date_start, $request->date_end])->where('contributionable_type', '!=', 'payroll_regionals')
             ->get();
 
             if($contributions->isEmpty()) {
                 return response()->json([
                     'error'=> true,
-                    'message' => 'No se encontraron registros en el rango '. $request->date_start ." - ". $request->date_end. " o correponden a descuento por Complemento Económico",
+                    'message' => 'No se encontraron registros en el rango '. $request->date_start ." - ". $request->date_end. " o correponden a descuento de planilla Regional",
                     'data' => []
                 ]);                
             }
