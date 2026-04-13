@@ -19,6 +19,7 @@ use App\Models\City;
 use App\Models\Activities;
 use App\Models\Contribution\ContributionPassive;
 use App\Models\Contribution\PayrollCommand;
+use App\Models\Contribution\PayrollRegional;
 use App\Models\Observation;
 use App\Models\Notification\NotificationSend;
 use Carbon\Carbon;
@@ -120,6 +121,10 @@ class Affiliate extends Model
     public function payroll_command()
     {
         return $this->hasMany(PayrollCommand::class);
+    }
+    public function payroll_regional()
+    {
+        return $this->hasMany(PayrollRegional::class);
     }
     public function spouse()
     {

@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Affiliate\Affiliate;
 use App\Models\Contribution\Contribution;
-use App\Models\Contribution\PayrollCommand;
 use App\Models\Affiliate\Unit;
 use App\Models\Affiliate\Degree;
 use App\Models\Affiliate\Breakdown;

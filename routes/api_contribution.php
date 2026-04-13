@@ -80,6 +80,19 @@ Route::group([
             Route::post('/import_payroll_filemaker', [App\Http\Controllers\Contribution\ImportPayrollFilemakerController::class, 'import_payroll_filemaker']);
             Route::post('import_contribution_filemaker', [App\Http\Controllers\Contribution\ImportPayrollFilemakerController::class, 'import_contribution_filemaker']);
             Route::post('/copy_affiliate_id_filemaker', [App\Http\Controllers\Contribution\ImportPayrollFilemakerController::class, 'copy_affiliate_id_frcam_to_affiliate_id']);
+
+            Route::post('/upload_copy_payroll_regional', [App\Http\Controllers\Contribution\ImportPayrollRegionalController::class, 'upload_copy_payroll_regional']);
+            Route::post('/list_dates_regional', [App\Http\Controllers\Contribution\ImportPayrollRegionalController::class, 'list_dates_regional']);
+            Route::post('/download_error_data_regional', [App\Http\Controllers\Contribution\ImportPayrollRegionalController::class, 'download_error_data_regional']);
+            Route::post('/download_data_regional', [App\Http\Controllers\Contribution\ImportPayrollRegionalController::class, 'download_data_regional']);
+            Route::post('/validation_affiliate_regional', [App\Http\Controllers\Contribution\ImportPayrollRegionalController::class, 'validation_affiliate_regional']);
+            Route::post('/import_payroll_regional', [App\Http\Controllers\Contribution\ImportPayrollRegionalController::class, 'import_payroll_regional']);
+            Route::post('import_contribution_regional', [App\Http\Controllers\Contribution\ImportPayrollRegionalController::class, 'import_contribution_regional']);
+            Route::post('/download_data_regional_revision', [App\Http\Controllers\Contribution\ImportPayrollRegionalController::class, 'download_data_regional_revision']);
+            Route::post('/rollback_payroll_copy_regionals', [App\Http\Controllers\Contribution\ImportPayrollRegionalController::class, 'rollback_payroll_copy_regionals']);
+            Route::get('/list_incomplete_processes', [App\Http\Controllers\Contribution\ImportPayrollRegionalController::class, 'list_incomplete_processes']);
+            Route::post('/delete_incomplete_processes', [App\Http\Controllers\Contribution\ImportPayrollRegionalController::class, 'delete_incomplete_processes']);
+            Route::post('/import_payroll_regional_progress_bar', [App\Http\Controllers\Contribution\ImportPayrollRegionalController::class, 'import_payroll_regional_progress_bar']); 
         });
         Route::group([
             'middleware' => 'permission:download-report-payroll-senasir|download-report-payroll-command|download-report-payroll-transcript'

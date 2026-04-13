@@ -70,6 +70,10 @@ class ImportationController extends Controller
                 $start_year = 2023;
                 $end_year = Carbon::now()->format('Y');
                 break;
+            case 'regional':
+                $start_year = 2026;
+                $end_year = Carbon::now()->format('Y');
+                break;
             default:
                 $start_year = 1976;
                 $end_year = Carbon::now()->format('Y');

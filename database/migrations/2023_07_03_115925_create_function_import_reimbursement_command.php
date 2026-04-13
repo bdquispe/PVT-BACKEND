@@ -65,7 +65,8 @@ return new class extends Migration
 									updated_at,
                                     category_id,
 									contributionable_type,
-									contributionable_id)						
+									contributionable_id,
+                                    days_worked)						
                                   VALUES (
                                   user_id_into,
                                   record_row.affiliate_id,
@@ -90,7 +91,9 @@ return new class extends Migration
                                   current_timestamp,
                                   record_row.category_id,
                                   'payroll_commands',
-                                  record_row.id);
+                                  record_row.id,
+                                  record_row.days_worked
+                                  );
                                   num_import:=num_import+1;
 
                               END LOOP;
