@@ -1401,10 +1401,10 @@ class ImportPayrollRegionalController extends Controller
         //cantidad esperada en base de datos auxiliar
         $count_data_aux = DB::connection('db_aux')->table('payroll_copy_regionals')
             ->whereDate('created_at', $date_import)
-            //->whereNull('error_message')
-            //->whereNull('deleted_at')
-            // ->where('state', 'ILIKE', 'validated')
-            //->whereNotIn('criteria', ['11-no-identificado', '5-sCI-sPN', '10-sCI-sPN'])
+            ->whereNull('error_message')
+            ->whereNull('deleted_at')
+            ->where('state', 'ILIKE', 'validated')
+            ->whereNotIn('criteria', ['11-no-identificado', '5-sCI-sPN', '10-sCI-sPN'])
             ->count();
 
         //cantidad de registros válidos en payroll_regionals
